@@ -233,3 +233,8 @@ add_executable(path_planning src/path_planning.cc)
 target_link_libraries(path_planning ${catkin_LIBRARIES})
 target_link_libraries(path_planning ${OpenCV_LIBS})
 add_dependencies(path_planning ${catkin_EXPORTED_TARGETS})
+
+add_executable(path_planning2 src/path_planning2.cc)
+target_link_libraries(path_planning2 ${catkin_LIBRARIES})
+target_link_libraries(path_planning2 ${OpenCV_LIBS})
+add_dependencies(path_planning2 ${catkin_EXPORTED_TARGETS})
