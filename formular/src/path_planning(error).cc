@@ -52,7 +52,7 @@ using namespace std;
 #define random_double(a,b) (rand()/double(RAND_MAX))  
 
 typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;  
-ros::Publisher pub_steer;
+
 
 /************************º¯ÊýÉùÃ÷************************/
 void bias_extend_tree(int(&x_picture), int(&y_picture), Mat(&map), const int endnode[2], double(&newpoint)[2], vector<vector<int> >(&tree), vector<double>y1, vector<double>y2, int(&filled_num), int(&greed_flag), int(&x_start), int(&x_end));
@@ -63,11 +63,9 @@ int fit_num(vector<Point>data_set);
 Mat polyfit(vector<Point>&(point_set), int n);
 void string_to_num(string s_temp, int* input_data);
 /*************************º¯Êý¶šÒå*************************/
-/**žÄœøºóµÄÆ«ÏòÄ¿±êÐÍRRTËã·š**/
-
 
 /**************/
-
+ros::Publisher pub_steer;
 void cloud_cb(const sensor_msgs::PointCloud2 &cloud_msg)
 {
 	PointCloud cloud_center;
@@ -75,28 +73,52 @@ void cloud_cb(const sensor_msgs::PointCloud2 &cloud_msg)
 	
 	/**路径边缘拟合**/
 	Mat map(500, 500, CV_8UC3, Scalar::all(0));  //用于显示的图像
-	int* input_data = new int[5];
 	string s_temp;
 	vector<Point>side_1, side_2;
-	ifstream infile;
-	infile.open("/home/wuconglei/测试数据/弯道上部边界1.txt");  //上部边界点
-	while (getline(infile, s_temp))
-	{
-		string_to_num(s_temp, input_data);
-		int x = input_data[0];
-		int y = input_data[1];
-		side_1.push_back(Point(x, y));
-	}
-	infile.close();
-	infile.open("/home/wuconglei/测试数据/弯道下部边界1.txt");  //下部边界点
-	while (getline(infile, s_temp))
-	{
-		string_to_num(s_temp, input_data);
-		int x = input_data[0];
-		int y = input_data[1];
-		side_2.push_back(Point(x, y));
-	}
-	infile.close();
+	
+	double x = 0;
+	double y = 0;
+	double z = 0;
+	int len = cloud_center.points.size();
+	cout<<len<<endl;
+  	for(int i = 0; i < len - 1; i ++){
+  		if(i == len - 2){
+  			if(cloud_center.points[i].x < cloud_center.points[i+1].x){
+  				x = cloud_center.points[i].x;
+				y = cloud_center.points[i].y;
+				cout<<'a'<<x<<y<<endl;
+				side_1.push_back(Point(x, y));
+				x = cloud_center.points[i+1].x;
+				y = cloud_center.points[i+1].y;
+				cout<<'b'<<x<<y<<endl;
+				side_2.push_back(Point(x, y));
+  			}
+  			else{
+  				x = cloud_center.points[i].x;
+				y = cloud_center.points[i].y;
+				cout<<'c'<<x<<y<<endl;
+				side_2.push_back(Point(x, y));
+				x = cloud_center.points[i+1].x;
+				y = cloud_center.points[i+1].y;
+				cout<<'d'<<x<<y<<endl;
+				side_1.push_back(Point(x, y));
+  			}
+  		}
+  		else {
+  			if(cloud_center.points[i].x < cloud_center.points[i+1].x){
+  				x = cloud_center.points[i].x;
+				y = cloud_center.points[i].y;
+				cout<<'e'<<x<<y<<endl;
+				side_1.push_back(Point(x, y));
+  			}
+  			else{
+  				x = cloud_center.points[i].x;
+				y = cloud_center.points[i].y;
+				cout<<'f'<<x<<y<<endl;
+				side_2.push_back(Point(x, y));
+  			}
+  		}
+	} 
 	vector<Point> point_set_1(side_1.begin(), side_1.end()), point_set_2(side_2.begin(), side_2.end());
 	int num = fit_num(side_1);  //多项式阶数，如路径点数少，而阶数过高，拟合会出错！
 	Mat mat_k1 = polyfit(point_set_1, fit_num(side_1));
@@ -112,7 +134,7 @@ void cloud_cb(const sensor_msgs::PointCloud2 &cloud_msg)
 		circle(map, center_2, 4, Scalar(255,100,50), CV_FILLED, CV_AA);
 	}
 	vector<double>x1, y1;
-	for (int i = 0; i < map.cols; ++i)  //上部路径边缘拟合曲线的坐标，i决定多项式的底数
+	for (int i = -2; i < 2; ++i)  //上部路径边缘拟合曲线的坐标，i决定多项式的底数
 	{
 		Point2d center;
 		center.x = i;  //要画的点的x,y坐标值，圆心坐标
@@ -126,7 +148,7 @@ void cloud_cb(const sensor_msgs::PointCloud2 &cloud_msg)
 		circle(map, center, 1, Scalar(255, 255, 255), CV_FILLED, CV_AA);
 	}
 	vector<double>x2, y2;  //y1,y2的下标对应0-499，共500个数
-	for (int i = 0; i < map.cols; ++i)  //下部路径边缘拟合曲线的坐标
+	for (int i = -2; i < 2; ++i)  //下部路径边缘拟合曲线的坐标
 	{
 		Point2d center;
 		center.x = i;  //要画的点的x,y坐标值，圆心坐标
@@ -246,9 +268,9 @@ void cloud_cb(const sensor_msgs::PointCloud2 &cloud_msg)
 	for (int i = 0; i != tree.size(); ++i)
 	{
 		if ((tree[i][0] != 0) && (tree[i][1] != 0))
-		
+		{
 			lastnode_num = lastnode_num + 1;  //统计tree写到哪一行
-		
+		}
 	}
 	for (int i = 0; i != lastnode_num-1; ++i)  //画出搜索树的所有节点
 	{
@@ -314,8 +336,7 @@ int main(int argc, char** argv)
 	ros::spin();
 }
 
-
-
+/**žÄœøºóµÄÆ«ÏòÄ¿±êÐÍRRTËã·š**/
 void bias_extend_tree(int(&x_picture), int(&y_picture), Mat(&map), const int endnode[2], double(&newpoint)[2], vector<vector<int> >(&tree), vector<double>y1, vector<double>y2, int(&filled_num), int(&greed_flag), int(&x_start), int(&x_end))
 {
 	int find_onenode_flag = 0;
@@ -529,3 +550,4 @@ void string_to_num(string s_temp, int* input_data)
 		}
 	}
 }
+

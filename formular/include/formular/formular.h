@@ -31,7 +31,7 @@
 #endif
 typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;  
 PointCloud space_part(PointCloud cloud, double x_distance, double y_distance, double z_distance);
-PointCloud space_part(PointCloud cloud, double slope);
+//PointCloud space_part(PointCloud cloud, double slope);
 PointCloud outlier_filter(PointCloud cloud, int MeanK, double Thresh);
 PointCloud center_cluster(PointCloud cloud, double Tolerance, int MinSize, int MaxSize);
 double steerCreator(PointCloud cloud);
@@ -76,7 +76,9 @@ std::vector<double> zCreator(PointCloud cloud, double x_distance, double y_dista
 	return heightMax;
 }
 
-PointCloud space_part(PointCloud cloud, double slope)///上坡，下坡保证有锥筒即可
+PointCloud space_part(PointCloud cloud, double slope,double widthOfRalatedRegion,double distanceOfDetection,double radiusOfUnrelatedRegion,double thresholdOfheight)
+//PointCloud space_part(PointCloud cloud, double slope)///上坡，下坡保证有锥筒即可
+/******     slop代表斜率阈值               ***********/
 {
 	sensor_msgs::PointCloud2 output;
 	PointCloud cloud_filtered;
@@ -98,7 +100,15 @@ PointCloud space_part(PointCloud cloud, double slope)///上坡，下坡保证有
 		double z2 = cloud.points[i].z - cloud.points[i-1].z;
 		double y2 = cloud.points[i].y - cloud.points[i-1].y;
 		double x2 = cloud.points[i].x - cloud.points[i-1].x;
-		if(x > -1.5 && x < 1.5 && y < 0 && y > -10 && ((z2*z2/(x2*x2+y2*y2))>slope || z > -0.5)&&  (x*x + y*y) > 0.3*0.3&& x !=NAN && y  != NAN && z != NAN ){///检测斜率，椎捅斜率比路面大得多//高度肯定高于地面的点云留
+		
+/***********************************************************/
+		if(x > -widthOfRalatedRegion/2 && x < widthOfRalatedRegion/2 && 
+			y < 0 && y > -distanceOfDetection && 
+			((z2*z2/(x2*x2+y2*y2))>slope || z > -thresholdOfheight) &&  
+			(x*x + y*y) > radiusOfUnrelatedRegion*radiusOfUnrelatedRegion && 
+			x !=NAN && y  != NAN && z != NAN ){///检测斜率，椎捅斜率比路面大得多//高度肯定高于地面的点云留
+/**********   x为相关区域宽度，y为前后长度。z为高度阈值 *****/
+
 			cloud_filtered.points.push_back (cloud.points[i]);
 		}
 		
@@ -171,6 +181,7 @@ PointCloud center_cluster(PointCloud cloud, double Tolerance, int MinSize, int M
   	ec.setSearchMethod (tree);                    //设置点云的搜索机制
   	ec.setInputCloud (cloud.makeShared());
   	ec.extract (cluster_indices);           //从点云中提取聚类，并将点云索引保存在cluster_indices中
+  
   	//迭代访问点云索引cluster_indices,直到分割处所有聚类
   	int j = 0;
   	int count = 0;
@@ -183,7 +194,11 @@ PointCloud center_cluster(PointCloud cloud, double Tolerance, int MinSize, int M
   	point_center.y = 0.;
   	point_center.z = 0.;
   	std::cout<<"id:"<<j+1<<"\t";
+  	
+/******************/
   	if(it->indices.size() > 1000) continue;//将较大的物体，例如人排除掉
+  	
+/******************/
   	count_z = 0;
     for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); ++pit)	{
      //设置保存点云的属性问题
@@ -193,8 +208,10 @@ PointCloud center_cluster(PointCloud cloud, double Tolerance, int MinSize, int M
     
     point_center.x += cloud.points[*pit].x;
     point_center.y += cloud.points[*pit].y;
+/****************************/
     if(cloud.points[*pit].z > -0.2 && count_z<5) count_z++;//5个较高的点，才判为大椎捅
     
+/************ 找出大椎捅 *********************/   
     }
     if(count_z == 5) point_center.z = 1.0;
     else point_center.z = -1.0;
@@ -227,7 +244,7 @@ double steerCreator(PointCloud cloud)
 	double disToNext = 0;
 	int left = -1;
 	int right = -1;
-	if(cloud.points.size()<2 || ((cloud.points[0].x*cloud.points[0].x +cloud.points[0].y*cloud.points[0].y) > 100)) return 10000.;
+	//if(cloud.points.size()<2 || ((cloud.points[0].x*cloud.points[0].x +cloud.points[0].y*cloud.points[0].y) > 100.0)) return 10000.;
 	std::vector<pcl::PointXYZ, Eigen::aligned_allocator_indirection<pcl::PointXYZ> >::iterator iter;
 	for(iter = cloud.points.begin(); iter != cloud.points.end(); iter++){
 		std::cout<<"x:"<<iter->x<<"\t"<<"y:"<<iter->y<<std::endl;
@@ -237,7 +254,9 @@ double steerCreator(PointCloud cloud)
   		y = cloud.points[i].y;
   		z = cloud.points[i].z;
   		if(x < 0.0){
+/*************/
   			if(right < 0 && (x*x + y*y) < 10.0) left = i;
+/******椎捅距离阈值******/
   			if(right >= 0 && (x*x + y*y) < 10.0) left = i; //最近的两对椎捅距离
   		}
   		else{
