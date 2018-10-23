@@ -39,12 +39,21 @@
 #include <opencv2/core/core.hpp> 
 #include <opencv2/imgproc/imgproc.hpp>
 
+#include <ros/console.h> 
+#include <nav_msgs/Path.h> 
+#include <std_msgs/String.h> 
+#include <geometry_msgs/Quaternion.h> 
+#include <geometry_msgs/PoseStamped.h> 
+#include <tf/transform_broadcaster.h> 
+#include <tf/tf.h> 
+
+
 using namespace cv;
 using namespace std;
 
 #define step 50
-#define car_size 10
-#define search_region 200  
+#define car_size 20
+#define search_region 120  
 #define big_M 1000
 #define max(a,b)  ((a >= b ) ? a : b)
 #define min(a,b)  ((a <= b ) ? a : b)
@@ -62,10 +71,12 @@ int search_nearnode(vector<vector<int> >(&tree), vector<int>(&path_x), vector<in
 int fit_num(vector<Point>data_set);
 Mat polyfit(vector<Point>&(point_set), int n);
 void string_to_num(string s_temp, int* input_data);
+void insert_sort(vector<Point>&a);
 /*************************º¯Êý¶šÒå*************************/
 
 /**************/
 ros::Publisher pub_steer;
+ros::Publisher path_pub;
 void cloud_cb(const sensor_msgs::PointCloud2 &cloud_msg)
 {
 	PointCloud cloud_center;
@@ -119,10 +130,18 @@ void cloud_cb(const sensor_msgs::PointCloud2 &cloud_msg)
   			}
   		}
 	} 
+	insert_sort(side_1);  //排序影响图像的显示范围，这里按X升序排序
+	insert_sort(side_2);
+	for (int i = 0; i != side_1.size(); ++i)
+	{
+		cout << side_1[i].x << "&" << side_1[i].y << endl;
+	}
 	vector<Point> point_set_1(side_1.begin(), side_1.end()), point_set_2(side_2.begin(), side_2.end());
 	int num = fit_num(side_1);  //多项式阶数，如路径点数少，而阶数过高，拟合会出错！
 	Mat mat_k1 = polyfit(point_set_1, fit_num(side_1));
 	Mat mat_k2 = polyfit(point_set_2, fit_num(side_2));
+	imshow("RRT", map);
+	waitKey(100);
 	for (int i = 0; i < side_1.size(); ++i)  //画出上部路径边缘的离散点
 	{
 		Point center_1 = side_1[i];
@@ -133,8 +152,10 @@ void cloud_cb(const sensor_msgs::PointCloud2 &cloud_msg)
 		Point center_2 = side_2[i];
 		circle(map, center_2, 4, Scalar(255,100,50), CV_FILLED, CV_AA);
 	}
+	imshow("RRT", map);
+	waitKey(100);
 	vector<double>x1, y1;
-	for (int i = -2; i < 2; ++i)  //上部路径边缘拟合曲线的坐标，i决定多项式的底数
+	for (int i = 0; i < map.cols; ++i)  //上部路径边缘拟合曲线的坐标，i决定多项式的底数
 	{
 		Point2d center;
 		center.x = i;  //要画的点的x,y坐标值，圆心坐标
@@ -145,10 +166,10 @@ void cloud_cb(const sensor_msgs::PointCloud2 &cloud_msg)
 		}
 		x1.push_back(center.x);
 		y1.push_back(center.y);
-		circle(map, center, 1, Scalar(255, 255, 255), CV_FILLED, CV_AA);
+		circle(map, center, 1, Scalar(0, 0, 0), CV_FILLED, CV_AA);
 	}
 	vector<double>x2, y2;  //y1,y2的下标对应0-499，共500个数
-	for (int i = -2; i < 2; ++i)  //下部路径边缘拟合曲线的坐标
+	for (int i = 0; i < map.cols; ++i)  //下部路径边缘拟合曲线的坐标
 	{
 		Point2d center;
 		center.x = i;  //要画的点的x,y坐标值，圆心坐标
@@ -159,8 +180,10 @@ void cloud_cb(const sensor_msgs::PointCloud2 &cloud_msg)
 		}
 		x2.push_back(center.x);
 		y2.push_back(center.y);
-		circle(map, center, 1, Scalar(255, 255, 255), CV_FILLED, CV_AA);
+		circle(map, center, 1, Scalar(0, 0, 0), CV_FILLED, CV_AA);
 	}
+	imshow("RRT", map);
+	waitKey(100);
 	/**路径区域划分**/
 	int x_start = (side_1[0].x + side_2[0].x) / 2;
 	int y_start = (side_1[0].y + side_2[0].y) / 2;
@@ -188,6 +211,10 @@ void cloud_cb(const sensor_msgs::PointCloud2 &cloud_msg)
 					{
 						map.at<Vec3b>(row, col) = Vec3b(0, 0, 255);  //下部障碍线以下区域标红
 					}
+					if ((row >y1[col]) && (row < y2[col]))
+					{
+						map.at<Vec3b>(row, col) = Vec3b(0, 255, 0);  //可行区域标绿
+					}
 				}
 				else
 				{
@@ -196,7 +223,16 @@ void cloud_cb(const sensor_msgs::PointCloud2 &cloud_msg)
 			}
 		}
 	}
-									   /**路径关键参数设定**/
+	Point p_start, p_end;
+	p_start.x = startnode[0];
+	p_start.y = startnode[1];
+	circle(map, p_start, 5, Scalar(255, 255, 255), -1);   //画出起点
+	p_end.x = endnode[0];
+	p_end.y = endnode[1];
+	circle(map, p_end, 5, Scalar(255, 255, 255), -1);  //画出终点
+	imshow("RRT", map);
+	waitKey(100);
+	/**路径关键参数设定**/
 	clock_t start, finish;
 	start = clock();  //开始计时
 	srand((unsigned)time(NULL));  //这句不能放在主函数外面;如没有这句，每次编译产生的随机数是一样的！
@@ -212,7 +248,7 @@ void cloud_cb(const sensor_msgs::PointCloud2 &cloud_msg)
 	tree[0][1] = startnode[1];
 	int x_picture = map.cols;  //图像大小
 	int y_picture = map.rows;
-	//**贪婪RRT路径规划**//
+	//**RRT路径规划**//
 	vector<int>path_x, path_y;  //路径节点的x,y坐标
 	int success = 0;
 	while (success == 0)
@@ -220,12 +256,12 @@ void cloud_cb(const sensor_msgs::PointCloud2 &cloud_msg)
 		filled_num = 0;  //每次统计前先归零
 		for (int i = 0; i != tree.size(); ++i)
 		{
-			if ((tree[i][0] != 0) & (tree[i][1] != 0))
+			if ((tree[i][0] != 0) || (tree[i][1] != 0))
 			{
 				filled_num = filled_num + 1;  //统计tree写到哪一行了
 			}
 		}
-		for (int i = 0; i != 2; ++i)  //每次产生两个可行点
+		for (int i = 0; i != 3; ++i)  //每次产生两个可行点
 		{
 			bias_extend_tree(x_picture, y_picture, map, endnode, newpoint, tree, y1, y2, filled_num, greed_flag, x_start, x_end);
 		}
@@ -256,14 +292,7 @@ void cloud_cb(const sensor_msgs::PointCloud2 &cloud_msg)
 	path_x.push_back(startnode[0]);  //记录起点坐标
 	path_y.push_back(startnode[1]);
 	cout << "最优路径回溯结束！" << endl;
-	//**最终路径绘制**//
-	Point p_start, p_end;
-	p_start.x = startnode[0];
-	p_start.y = startnode[1];
-	circle(map, p_start, 5, Scalar(255, 255, 255), -1);   //画出起点
-	p_end.x = endnode[0];
-	p_end.y = endnode[1];
-	circle(map, p_end, 5, Scalar(255, 255, 255), -1);  //画出终点
+	//**画出随机搜索树的所有点**//
 	int lastnode_num = 0;
 	for (int i = 0; i != tree.size(); ++i)
 	{
@@ -272,24 +301,49 @@ void cloud_cb(const sensor_msgs::PointCloud2 &cloud_msg)
 			lastnode_num = lastnode_num + 1;  //统计tree写到哪一行
 		}
 	}
-	for (int i = 0; i != lastnode_num-1; ++i)  //画出搜索树的所有节点
+	for (int i = 0; i != lastnode_num - 1; ++i)  //画出搜索树的所有节点
 	{
 		Point p;
 		p.x = tree[i][0];
-		p.y = tree[i][1];    
-		circle(map, p, 4, Scalar(200, 200, 0), -1); //画点：第三个参数为线宽，第五个参数设为-1，表明是个实点
+		p.y = tree[i][1];
+		circle(map, p, 4, Scalar(0, 0, 0), -1); //画点：第三个参数为线宽，第五个参数设为-1，表明是个实点
 		Point start_point = Point(tree[i][0], tree[i][1]);
 		Point end_point = Point(tree[i + 1][0], tree[i + 1][1]);
 	}
-	for (int i = 0; i != path_x.size()-1;++i)  //画出回溯得到的最优路径
+	
+	//**最终路径绘制**rviz 版本//
+	nav_msgs::Path path; //nav_msgs::Path path; 
+	path.header.stamp=cloud_msg.header.stamp; 
+	path.header.frame_id="pandar"; 
+	path.poses.clear();
+	for (int i = path_x.size() - 1; i >= 1; --i)
 	{
-		Point p;
-		p.x = path_x[i];
-		p.y = path_y[i];   
-		circle(map, p, 2, Scalar(255, 50, 0), -1); //画点：第三个参数为线宽，第五个参数设为-1，表明是个实点
-		Point start_point = Point(path_x[i], path_y[i]);
-		Point end_point = Point(path_x[i + 1], path_y[i + 1]);
+		geometry_msgs::PoseStamped this_pose_stamped; 
+		this_pose_stamped.pose.position.x = path_x[i]; 
+		this_pose_stamped.pose.position.y = path_y[i]; 
+		geometry_msgs::Quaternion goal_quat = tf::createQuaternionMsgFromYaw(atan2(path_y[i],path_x[i]));
+		this_pose_stamped.pose.orientation.x = goal_quat.x; 
+		this_pose_stamped.pose.orientation.y = goal_quat.y; 
+		this_pose_stamped.pose.orientation.z = goal_quat.z; 
+		this_pose_stamped.pose.orientation.w = goal_quat.w; 
+		this_pose_stamped.header.stamp=ros::Time::now(); 
+		this_pose_stamped.header.frame_id="pandar"; 
+		path.poses.push_back(this_pose_stamped); 
+		
+	}
+	path_pub.publish(path); // check for incoming messages 
+	
+	
+	
+	
+	//**最终路径绘制**//
+	for (int i = path_x.size() - 1; i >= 1; --i)  //画出回溯得到的最优路径
+	{
+		Point start_point = Point(path_x[i], path_y[i]);//////////////////////////////////////////////////////////最优路径
+		Point end_point = Point(path_x[i - 1], path_y[i - 1]);
 		line(map, start_point, end_point, Scalar(255, 0, 0), 3);  //画线
+		imshow("RRT", map);
+		waitKey(100);
 	}
 	//**计算导向线**//
 	vector<Point> point_set_line;
@@ -301,7 +355,6 @@ void cloud_cb(const sensor_msgs::PointCloud2 &cloud_msg)
 	}
 	int num_line = fit_num(point_set_line);  //初始点开始的几个点的拟合
 	Mat mat_k_line = polyfit(point_set_line, num_line);
-	vector<double>x_direction_line, y_direction_line;
 	for (int i = path_x[path_x.size() - 3]; i >= path_x[path_x.size() - 1]; --i)  //画出上部路径边缘拟合曲线，i决定多项式的底数
 	{
 		Point2d center;
@@ -311,12 +364,10 @@ void cloud_cb(const sensor_msgs::PointCloud2 &cloud_msg)
 		{
 			center.y += mat_k_line.at<double>(j, 0)*pow(i, j);
 		}
-		x_direction_line.push_back(center.x);
-		x_direction_line.push_back(center.y);
 		circle(map, center, 1, Scalar(160, 160, 0), CV_FILLED, CV_AA);
 	}
 	cout << "程序运行结束！" << endl;
-	imshow("rrt", map);//贪婪RRT得到的路径
+	imshow("RRT", map);
 	waitKey(0);
 	
 	
@@ -333,6 +384,7 @@ int main(int argc, char** argv)
 	
 	ros::Subscriber sub = n.subscribe("cluster_points", 10, cloud_cb);
 	pub_steer = n.advertise<std_msgs::Float64> ("formular_steer", 10);
+	path_pub = n.advertise<nav_msgs::Path>("trajectory",1, true);
 	ros::spin();
 }
 
@@ -341,10 +393,10 @@ void bias_extend_tree(int(&x_picture), int(&y_picture), Mat(&map), const int end
 {
 	int find_onenode_flag = 0;
 	int randpoint[2] = { 0,0 };
-	while (find_onenode_flag != 1)  // Ã¿ŽÎwhileÑ­»·£¬¶Œ»áÕÒµœÒ»žö¿ÉÐÐµÄœÚµã£¬ŽÓ¶øÍØÕ¹Â·Ïß
+	while (find_onenode_flag != 1)  //每次while循环，都会找到一个可行的节点，从而拓展路线
 	{
 		double rand_num = random_double(0, 1);
-		if ((greed_flag == 1) || (rand_num < 0.5))  //ÉÏŽÎÍùÄ¿±êµã·œÏòµÄÍØÕ¹ÎŽÊÜµœ×è°­,»ò²úÉúµÄËæ»úÊýÐ¡ÓÚÆ«ÖÃžÅÂÊ£¬Ö±œÓÒÔÖÕµãÎªÄ¿±êµãœøÐÐÍØÕ¹
+		if ((greed_flag == 1) || (rand_num < 0.5))  //上次往目标点方向的拓展未受到阻碍,或产生的随机数小于偏置概率，直接以终点为目标点进行拓展
 		{
 			randpoint[0] = endnode[0];
 			randpoint[1] = endnode[1];
@@ -352,7 +404,7 @@ void bias_extend_tree(int(&x_picture), int(&y_picture), Mat(&map), const int end
 		else
 		{
 			randpoint[0] = random_int(tree[filled_num - 1][0], x_end);
-			int a = y1[randpoint[0]], b = y2[randpoint[0]];  //°Ñdouble×ª»¯³Éint
+			int a = y1[randpoint[0]], b = y2[randpoint[0]];  //把double转化成int
 			randpoint[1] = random_int(a, b);
 		}
 		double x_deviation = 0;
@@ -369,13 +421,17 @@ void bias_extend_tree(int(&x_picture), int(&y_picture), Mat(&map), const int end
 		}
 		double x_deviation_abs = fabs(x_deviation);
 		double y_deviation_abs = fabs(y_deviation);
-		newpoint[0] = tree[filled_num - 1][0] + (x_deviation / x_deviation_abs)*(random_int(1, step));  //ŽÓËÑË÷µœµÄÏàÁÚœÚµãÏòËæ»úœÚµã·œÏòÍØÕ¹Ëæ»ú²œ³€ŸàÀë
+		newpoint[0] = tree[filled_num - 1][0] + (x_deviation / x_deviation_abs)*(random_int(1, step));  //从搜索到的相邻节点向随机节点方向拓展随机步长距离
+		if (newpoint[0] > x_end)
+		{
+			newpoint[0] = x_end;
+		}
 		newpoint[1] = tree[filled_num - 1][1] + (y_deviation / y_deviation_abs)*(random_int(1, step));
 		if (collision(newpoint, map, x_picture, y_picture, tree, y1, y2, filled_num, x_start, x_end) == 0)
 		{
 			for (int k = 0; k != tree.size(); ++k)
 			{
-				if ((tree[k][0] == 0) && (tree[k][1] == 0))  //Ã¿ÕÒµœÒ»žö¿ÉÐÐµÄœÚµã£¬œ«ÆäŒÓÈëtreeÖÐ
+				if ((tree[k][0] == 0) && (tree[k][1] == 0))  //每找到一个可行的节点，将其加入tree中
 				{
 					tree[k][0] = newpoint[0];
 					tree[k][1] = newpoint[1];
@@ -390,33 +446,32 @@ void bias_extend_tree(int(&x_picture), int(&y_picture), Mat(&map), const int end
 			{
 				greed_flag = 0;
 			}
-			find_onenode_flag = 1;  //ÕÒµœÒ»žöÐÂœÚµã£¬œáÊøÉÏÃæµÄwhileÑ­»·
+			find_onenode_flag = 1;  //找到一个新节点，结束上面的while循环
 		}
 		else
 		{
-			find_onenode_flag = 0;  //ÖØžŽÑ­»·Ö±µœÕÒµœ¿ÉÐÐœÚµã
+			find_onenode_flag = 0;  //重复循环直到找到可行节点
 		}
 	}
 }
-/**ÐÂœÚµãÑ¡Ôñº¯Êý**/
-//×ÛºÏ¿ŒÂÇŸàÀëÓëÇúÂÊ£¬Ñ¡È¡ÇúÂÊÓëŸàÀëŒÓÈšºÍ×îÐ¡µÄœÚµã×÷ÎªÐÂœÚµã
+/**新节点选择函数**/
 int search_nearnode(vector<vector<int> >(&tree), vector<int>(&path_x), vector<int>(&path_y), int(&startnode)[2], int(&x_start), int(&x_end))
 {
 	vector<double>distance;
 	vector<int>d_num;
-	double distance_MIN = big_M;
+	double distance_min = big_M;
 	int lastnode_num = 0;
 	for (int i = 0; i != tree.size(); ++i)
 	{
 		if ((tree[i][0] != 0) && (tree[i][1] != 0))
 		{
-			lastnode_num = lastnode_num + 1;  //Í³ŒÆtreeÐŽµœÄÄÒ»ÐÐ
+			lastnode_num = lastnode_num + 1;  //统计tree写到哪一行
 		}
 	}
 	int path_num = 0;
 	for (int i = 0; i != path_x.size(); ++i)
 	{
-		path_num = path_num + 1;  //Í³ŒÆpath_xÐŽµœÄÄÒ»ÐÐ
+		path_num = path_num + 1;  //统计path_x写到哪一行
 	}
 	int block_r = path_x[path_num - 1];
 	int block_l = max(block_r - search_region, x_start);
@@ -429,28 +484,28 @@ int search_nearnode(vector<vector<int> >(&tree), vector<int>(&path_x), vector<in
 			d_num.push_back(i);
 		}
 	}
-	int MIN_row_num = 0;
+	int min_row_num = 0;
 	for (int i = 0; i != distance.size(); ++i)
 	{
-		if (distance[i] < distance_MIN)
+		if (distance[i] < distance_min)
 		{
-			distance_MIN = distance[i];
-			MIN_row_num = d_num[i];
+			distance_min = distance[i];
+			min_row_num = d_num[i];
 		}
 	}
-	return MIN_row_num;  //·µ»ØŸàÀë×îœüµÄµãÔÚtreeÖÐ¶ÔÓŠµÄÐÐÊý
+	return min_row_num;  //返回距离最近的点在tree中对应的行数
 }
-/**Åö×²Œì²âº¯Êý**/
+/**碰撞检测函数**/
 int collision(double(&newpoint)[2], Mat(&map), int x_picture, int y_picture, vector<vector<int> >(&tree), vector<double>y1, vector<double>y2, int(&filled_num), int(&x_start), int(&x_end))
 {
-	int collision_flag_1 = 0;  //ÅÐ¶ÏÐÂµãžœœüÊÇ·ñŽæÔÚÕÏ°­Îï
+	int collision_flag_1 = 0;  //判断新点附近是否存在障碍物
 	int x_temp = newpoint[0];
 	int y_temp = newpoint[1];
 	for (int i = (max(x_temp - car_size, x_start)); i <= (min(x_temp + car_size, x_end)); ++i)
 	{
 		if (((y_temp - car_size) > y1[i]) && ((y_temp + car_size) < y2[i]))
 		{
-			collision_flag_1 = 0;  //²»»áÅö×²£¬žÃµã¿ÉÐÐ
+			collision_flag_1 = 0;  //不会碰撞，该点可行
 		}
 		else
 		{
@@ -460,20 +515,20 @@ int collision(double(&newpoint)[2], Mat(&map), int x_picture, int y_picture, vec
 	}
 	return collision_flag_1;
 }
-/**Ëæ»úËÑË÷Íê³Éºó£¬ŽÓÖÕµã×·ËÝ¿ÉÐÐÂ·Ÿ¶**/
+/**随机搜索完成后，从终点追溯可行路径**/
 void find_path(vector<int>(&path_x), vector<int>(&path_y), vector<vector<int> >(&tree), int(&startnode)[2], int(&x_start), int(&x_end))
 {
-	int MIN_row_num = 0;
+	int min_row_num = 0;
 	double distance = big_M;
 	while (distance>step)
 	{
-		MIN_row_num = search_nearnode(tree, path_x, path_y, startnode, x_start, x_end);  //ŒÓÈë×·ËÝÂ·Ÿ¶µÄœÚµãÐòºÅ
-		path_x.push_back(tree[MIN_row_num][0]);
-		path_y.push_back(tree[MIN_row_num][1]);
+		min_row_num = search_nearnode(tree, path_x, path_y, startnode, x_start, x_end);  //加入追溯路径的节点序号
+		path_x.push_back(tree[min_row_num][0]);
+		path_y.push_back(tree[min_row_num][1]);
 		int path_num = 0;
 		for (int i = 0; i != path_x.size(); ++i)
 		{
-			path_num = path_num + 1;  //Í³ŒÆpath_xÐŽµœÄÄÒ»ÐÐ
+			path_num = path_num + 1;  //统计path_x写到哪一行
 		}
 		distance = sqrt((startnode[0] - path_x[path_num - 1])*(startnode[0] - path_x[path_num - 1]) + (startnode[1] - path_y[path_num - 1])*(startnode[1] - path_y[path_num - 1]));
 	}
@@ -483,12 +538,12 @@ void find_path(vector<int>(&path_x), vector<int>(&path_y), vector<vector<int> >(
 		path_x.pop_back();
 		path_y.pop_back();
 	}
-	cout << "Â·Ÿ¶»ØËÝœáÊø£¡" << endl;
+	cout << "路径回溯结束！" << endl;
 }
 int fit_num(vector<Point>data_set)
 {
 	int fit_num = 0;
-	if (data_set.size() >= 8)  //žùŸÝÄâºÏµãÊýÁ¿Ÿö¶š¶àÏîÊœµÄÄâºÏœ×Êý
+	if (data_set.size() >= 8)  //根据拟合点数量决定多项式的拟合阶数
 	{
 		fit_num = 8;
 	}
@@ -507,9 +562,9 @@ int fit_num(vector<Point>data_set)
 }
 Mat polyfit(vector<Point>&(point_set), int n)
 {
-	int size = point_set.size();  //ÄâºÏµãµÄÊýÄ¿
+	int size = point_set.size();  //拟合点的数目
 	int x_num = n + 1;
-	Mat mat_u(size, x_num, CV_64F);  //¹¹ÔìŸØÕóUºÍY
+	Mat mat_u(size, x_num, CV_64F);  //构造矩阵U和Y
 	Mat mat_y(size, 1, CV_64F);
 	for (int i = 0; i < mat_u.rows; ++i)
 	{
@@ -522,32 +577,49 @@ Mat polyfit(vector<Point>&(point_set), int n)
 	{
 		mat_y.at<double>(i, 0) = point_set[i].y;
 	}
-	Mat mat_k(x_num, 1, CV_64F); //ŸØÕóÔËËã£¬»ñµÃÏµÊýŸØÕóK 
+	Mat mat_k(x_num, 1, CV_64F); //矩阵运算，获得系数矩阵K
 	mat_k = (mat_u.t()*mat_u).inv()*mat_u.t()*mat_y;
 	cout << mat_k << endl;
 	return mat_k;
 }
 void string_to_num(string s_temp, int* input_data)
 {
-	bool temp = false;		//¶ÁÈ¡Ò»žöÊýŸÝ±êÖŸÎ»
-	int data = 0;				//·ÖÀëµÄÒ»žöÊýŸÝ
-	int m = 0;				//Êý×éË÷ÒýÖµ
-	for (int i = 0; i<s_temp.length(); i++)
+	bool temp = false;		//读取一个数据标志位
+	int data = 0;				//分离的一个数据
+	int m = 0;				//数组索引值
+	for (int i = 0; i < s_temp.length(); i++)
 	{
-		while ((s_temp[i] >= '0') && (s_temp[i] <= '9'))		//µ±Ç°×Ö·ûÊÇÊýŸÝ£¬²¢Ò»Ö±¶ÁºóÃæµÄÊýŸÝ£¬Ö»ÒªÓöµœ²»ÊÇÊý×ÖÎªÖ¹
+		while ((s_temp[i] >= '0') && (s_temp[i] <= '9'))		//当前字符是数据，并一直读后面的数据，只要遇到不是数字为止
 		{
-			temp = true;		//¶ÁÊýŸÝ±êÖŸÎ»ÖÃÎ»
+			temp = true;		//读数据标志位置位
 			data *= 10;
-			data += (s_temp[i] - '0');		//×Ö·ûÔÚÏµÍ³ÒÔASCIIÂëŽæŽ¢£¬ÒªµÃµœÆäÊµŒÊÖµ±ØÐëŒõÈ¥¡®0¡¯µÄASCIIÖµ
+			data += (s_temp[i] - '0');		//字符在系统以ASCII码存储，要得到其实际值必须减去‘0’的ASCII值
 			i++;
 		}
-		if (temp)		//ÅÐ¶ÏÊÇ·ñÍêÈ«¶ÁÈ¡Ò»žöÊýŸÝ
+		if (temp)		//判断是否完全读取一个数据
 		{
-			input_data[m] = data;		//ž³Öµ
+			input_data[m] = data;		//赋值
 			m++;
 			data = 0;
-			temp = false;		//±êÖŸÎ»žŽÎ»
+			temp = false;		//标志位复位
 		}
 	}
 }
-
+/**插入排序**/
+void insert_sort(vector<Point>&a) 
+{
+	for (int i = 1; i<a.size(); ++i) 
+	{
+		int tmp_x = a[i].x;
+		int tmp_y = a[i].y;
+		int j = i - 1;
+		while (j >= 0 && tmp_x<a[j].x) 
+		{
+			a[j + 1].x = a[j].x;
+			a[j + 1].y = a[j].y;
+			j--;
+		}
+		a[j + 1].x = tmp_x;
+		a[j + 1].y = tmp_y;
+	}
+}
