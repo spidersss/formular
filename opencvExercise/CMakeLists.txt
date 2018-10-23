@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(formular)
+project(opencvExercise)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -15,15 +15,13 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 find_package(catkin REQUIRED COMPONENTS
   cv_bridge
   image_transport
-  nav_msgs
   pcl_conversions
   pcl_ros
   roscpp
-  rosopencv
   rospy
   sensor_msgs
+  sensor_msgs
   std_msgs
-  tf
 )
 
 ## System dependencies are found with CMake's conventions
@@ -83,7 +81,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate added messages and services with any dependencies listed here
 # generate_messages(
 #   DEPENDENCIES
-#   nav_msgs#   sensor_msgs#   std_msgs
+#   sensor_msgs#   sensor_msgs#   std_msgs
 # )
 
 ################################################
@@ -116,9 +114,9 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-   INCLUDE_DIRS include
-#  LIBRARIES formular
-   CATKIN_DEPENDS cv_bridge image_transport nav_msgs pcl_conversions pcl_ros roscpp rosopencv rospy sensor_msgs std_msgs tf
+#  INCLUDE_DIRS include
+#  LIBRARIES opencvExercise
+#  CATKIN_DEPENDS cv_bridge image_transport pcl_conversions pcl_ros roscpp rospy sensor_msgs sensor_msgs std_msgs
 #  DEPENDS system_lib
 )
 
@@ -129,13 +127,13 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-  include
+# include
   ${catkin_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/formular.cpp
+#   src/${PROJECT_NAME}/opencvExercise.cpp
 # )
 
 ## Add cmake target dependencies of the library
@@ -146,7 +144,7 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/formular_node.cpp)
+# add_executable(${PROJECT_NAME}_node src/opencvExercise_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -197,54 +195,21 @@ include_directories(
 #   # myfile2
 #   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 # )
-install(DIRECTORY include/${PROJECT_NAME}/
-   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-   FILES_MATCHING PATTERN "*.h"
-   PATTERN ".svn" EXCLUDE
-)
 
-## Mark other files for installation (e.g. launch and bag files, etc.)
-install(DIRECTORY launch/
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
-)
 #############
 ## Testing ##
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_formular.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_opencvExercise.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
-add_executable(parted src/parted.cc)
-target_link_libraries(parted ${catkin_LIBRARIES})
-add_dependencies(parted ${catkin_EXPORTED_TARGETS})
 
-add_executable(clustered src/clustered.cc)
-target_link_libraries(clustered ${catkin_LIBRARIES})
-add_dependencies(clustered ${catkin_EXPORTED_TARGETS})
-
-add_executable(steer src/steer.cc)
-target_link_libraries(steer ${catkin_LIBRARIES})
-add_dependencies(steer ${catkin_EXPORTED_TARGETS})
-
-add_executable(steer_tank src/steer_tank.cc)
-target_link_libraries(steer_tank ${catkin_LIBRARIES})
-add_dependencies(steer_tank ${catkin_EXPORTED_TARGETS})
-
-add_executable(parted2_bazi src/parted2_bazi.cc)
-target_link_libraries(parted2_bazi ${catkin_LIBRARIES})
-add_dependencies(parted2_bazi ${catkin_EXPORTED_TARGETS})
-
-add_executable(path_planning src/path_planning.cc)
-target_link_libraries(path_planning ${catkin_LIBRARIES})
-target_link_libraries(path_planning ${OpenCV_LIBS})
-add_dependencies(path_planning ${catkin_EXPORTED_TARGETS})
-
-add_executable(path_planning2 src/path_planning2.cc)
-target_link_libraries(path_planning2 ${catkin_LIBRARIES})
-target_link_libraries(path_planning2 ${OpenCV_LIBS})
-add_dependencies(path_planning2 ${catkin_EXPORTED_TARGETS})
+add_executable(path_planning3 src/path_planning3.cc)
+target_link_libraries(path_planning3 ${catkin_LIBRARIES})
+target_link_libraries(path_planning3 ${OpenCV_LIBS})
+add_dependencies(path_planning3 ${catkin_EXPORTED_TARGETS})
