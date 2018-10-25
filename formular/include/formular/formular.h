@@ -103,8 +103,8 @@ PointCloud space_part(PointCloud cloud, double slope,double widthOfRalatedRegion
 		
 /***********************************************************/
 		if(x > -widthOfRalatedRegion/2 && x < widthOfRalatedRegion/2 && 
-			y < 0 && y > -distanceOfDetection && 
-			((z2*z2/(x2*x2+y2*y2))>slope || z > -thresholdOfheight) &&  
+			y < 0 && y > -1.0*distanceOfDetection && 
+			((z2*z2/(x2*x2+y2*y2))>slope || z > thresholdOfheight) &&  
 			(x*x + y*y) > radiusOfUnrelatedRegion*radiusOfUnrelatedRegion && 
 			x !=NAN && y  != NAN && z != NAN ){///检测斜率，椎捅斜率比路面大得多//高度肯定高于地面的点云留
 /**********   x为相关区域宽度，y为前后长度。z为高度阈值 *****/
@@ -196,7 +196,7 @@ PointCloud center_cluster(PointCloud cloud, double Tolerance, int MinSize, int M
   	std::cout<<"id:"<<j+1<<"\t";
   	
 /******************/
-  	if(it->indices.size() > 1000) continue;//将较大的物体，例如人排除掉
+  	if(it->indices.size() > 300) continue;//将较大的物体，例如人排除掉
   	
 /******************/
   	count_z = 0;
