@@ -168,7 +168,7 @@ public:
 		vector<Point> target_point;
 		point.x = 0.0;
 		point.y = 0.0;
-		//target_point.push_back(point);
+		target_point.push_back(point);
 		for (int i = 0; i < min(side_1.size(), side_2.size() ) - 1; ++i)
 		{
 			point.x = (side_1[i].x + side_2[i].x) / 2.0; 
@@ -178,8 +178,9 @@ public:
 		geometry_msgs::PoseStamped this_pose_stamped; 
 		geometry_msgs::Quaternion goal_quat;
 		int target_len = target_point.size();
-		if(target_len < 2) return ;
-		for (int i = 0; i < min( target_len , 2 ) ; ++i)//配对两边椎捅////////////////////////////// 
+		//if(target_len < 2) return ;
+		//for (int i = 0; i < min( target_len , 2 ) ; ++i)//配对两边椎捅//////////////////////////////
+		for (int i = 0; i < target_len; ++i) 
 		{	
 			this_pose_stamped.pose.position.x = target_point[i].x; 
 			this_pose_stamped.pose.position.y = target_point[i].y;

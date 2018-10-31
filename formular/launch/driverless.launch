@@ -13,7 +13,12 @@
 
 
 <!--steer creater parameters -->
-	<param name="yawErrToSteerAngle_Kp" value="1.0"/>
+	<param name="yawErrToSteerAngle_Kp" value="10.0"/>
+	
+
+<!--lower_control parameters -->
+	<param name="port_name" value="/dev/ttyUSB0"/>
+
 
 	
 	<node name="parted" pkg="formular" type="parted" output="screen"/>
@@ -21,5 +26,7 @@
 	<node name="clustered" pkg="formular" type="clustered" output="screen"/>
 	
 	<node name="steer" pkg="formular" type="steer"/>
+	
+	<node name="lower_control_node" pkg="temp_pkg" type="lower_control_node" output="screen"/>
 
 </launch>

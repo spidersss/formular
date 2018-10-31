@@ -1,29 +1,15 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(formular)
+project(temp_pkg)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
- ##add_compile_options(-std=c++11)
+# add_compile_options(-std=c++11)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-set(OpenCV_DIR /usr/local/share/OpenCV)
-message(STATUS "    version: ${OpenCV_VERSION}")
-find_package(OpenCV REQUIRED)
-include_directories(${OpenCV_INCLUDE_DIRS})
-
-
 find_package(catkin REQUIRED COMPONENTS
-  
-  pcl_conversions
-  pcl_ros
   roscpp
-  sensor_msgs
   std_msgs
-  image_transport 
-  cv_bridge 
-  nav_msgs
-  tf
 )
 
 ## System dependencies are found with CMake's conventions
@@ -45,10 +31,10 @@ find_package(catkin REQUIRED COMPONENTS
 ##   your messages/services/actions (e.g. std_msgs, actionlib_msgs, ...).
 ## * In the file package.xml:
 ##   * add a build_depend tag for "message_generation"
-##   * add a build_depend and a run_depend tag for each package in MSG_DEP_SET
+##   * add a build_depend and a exec_depend tag for each package in MSG_DEP_SET
 ##   * If MSG_DEP_SET isn't empty the following dependency has been pulled in
 ##     but can be declared for certainty nonetheless:
-##     * add a run_depend tag for "message_runtime"
+##     * add a exec_depend tag for "message_runtime"
 ## * In this file (CMakeLists.txt):
 ##   * add "message_generation" and every package in MSG_DEP_SET to
 ##     find_package(catkin REQUIRED COMPONENTS ...)
@@ -83,7 +69,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate added messages and services with any dependencies listed here
 # generate_messages(
 #   DEPENDENCIES
-#   #   sensor_msgs#   std_msgs
+#   std_msgs
 # )
 
 ################################################
@@ -93,7 +79,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## To declare and build dynamic reconfigure parameters within this
 ## package, follow these steps:
 ## * In the file package.xml:
-##   * add a build_depend and a run_depend tag for "dynamic_reconfigure"
+##   * add a build_depend and a exec_depend tag for "dynamic_reconfigure"
 ## * In this file (CMakeLists.txt):
 ##   * add "dynamic_reconfigure" to
 ##     find_package(catkin REQUIRED COMPONENTS ...)
@@ -116,9 +102,9 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-  INCLUDE_DIRS include
-#  LIBRARIES formular
-  CATKIN_DEPENDS  pcl_conversions pcl_ros roscpp sensor_msgs std_msgs image_transport cv_bridge nav_msgs tf
+#  INCLUDE_DIRS include
+#  LIBRARIES temp_pkg
+#  CATKIN_DEPENDS roscpp std_msgs
 #  DEPENDS system_lib
 )
 
@@ -129,13 +115,13 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-  include
+ include/temp_pkg
   ${catkin_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/lidar_hesai.cpp
+#   src/${PROJECT_NAME}/temp_pkg.cpp
 # )
 
 ## Add cmake target dependencies of the library
@@ -146,7 +132,7 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/lidar_hesai_node.cpp)
+# add_executable(${PROJECT_NAME}_node src/temp_pkg_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -185,23 +171,25 @@ include_directories(
 # )
 
 ## Mark cpp header files for installation
-install(DIRECTORY include/${PROJECT_NAME}/
-   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-   FILES_MATCHING PATTERN "*.h"
-   PATTERN ".svn" EXCLUDE
-)
+# install(DIRECTORY include/${PROJECT_NAME}/
+#   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+#   FILES_MATCHING PATTERN "*.h"
+#   PATTERN ".svn" EXCLUDE
+# )
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
-install(DIRECTORY launch/
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
-)
+# install(FILES
+#   # myfile1
+#   # myfile2
+#   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+# )
 
 #############
 ## Testing ##
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_lidar_hesai.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_temp_pkg.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
@@ -209,41 +197,6 @@ install(DIRECTORY launch/
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
 
-
-
-add_executable(parted src/parted.cc)
-target_link_libraries(parted ${catkin_LIBRARIES})
-add_dependencies(parted ${catkin_EXPORTED_TARGETS})
-
-add_executable(clustered src/clustered.cc)
-target_link_libraries(clustered ${catkin_LIBRARIES})
-add_dependencies(clustered ${catkin_EXPORTED_TARGETS})
-
-add_executable(steer src/steer.cc)
-target_link_libraries(steer ${catkin_LIBRARIES})
-add_dependencies(steer ${catkin_EXPORTED_TARGETS})
-
-add_executable(steer_tank src/steer_tank.cc)
-target_link_libraries(steer_tank ${catkin_LIBRARIES})
-add_dependencies(steer_tank ${catkin_EXPORTED_TARGETS})
-
-add_executable(parted2_bazi src/parted2_bazi.cc)
-target_link_libraries(parted2_bazi ${catkin_LIBRARIES})
-add_dependencies(parted2_bazi ${catkin_EXPORTED_TARGETS})
-
-add_executable(path_planning src/path_planning.cc)
-target_link_libraries(path_planning ${catkin_LIBRARIES})
-target_link_libraries(path_planning ${OpenCV_LIBS})
-add_dependencies(path_planning ${catkin_EXPORTED_TARGETS})
-
-add_executable(path_planning2 src/path_planning2.cc)
-target_link_libraries(path_planning2 ${catkin_LIBRARIES})
-target_link_libraries(path_planning2 ${OpenCV_LIBS})
-add_dependencies(path_planning2 ${catkin_EXPORTED_TARGETS})
-
-add_executable(path src/path.cc)
-target_link_libraries(path ${catkin_LIBRARIES})
-target_link_libraries(path ${OpenCV_LIBS})
-add_dependencies(path ${catkin_EXPORTED_TARGETS})
-
-
+add_executable(lower_control_node src/main.cc src/serial_open.cc)
+target_link_libraries(lower_control_node ${catkin_LIBRARIES})
+add_dependencies(lower_control_node ${catkin_EXPORTED_TARGETS})
