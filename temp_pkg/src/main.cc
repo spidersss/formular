@@ -42,7 +42,10 @@ private:
 	void Callback(const std_msgs::Float64 &msg)
 	{
 		ROS_INFO("receive msg....");
-		
+		double Kp = 0.6;
+		sendBuf[4] = msg.data * 0.1 * Kp + 127;
+		if(sendBuf[4] < 1) sendBuf[4] = 1;
+		if(sendBuf[4] > 254) sendBuf[4] = 254;
 	}
 	
 	void send_Cmd_Callback(const ros::TimerEvent&)
