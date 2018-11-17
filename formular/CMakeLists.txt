@@ -246,4 +246,7 @@ target_link_libraries(path ${catkin_LIBRARIES})
 target_link_libraries(path ${OpenCV_LIBS})
 add_dependencies(path ${catkin_EXPORTED_TARGETS})
 
-
+add_executable(gps_ctrl src/gps_ctrl.cc)
+target_link_libraries(gps_ctrl ${catkin_LIBRARIES})
+target_link_libraries(gps_ctrl ${OpenCV_LIBS})
+add_dependencies(gps_ctrl ${catkin_EXPORTED_TARGETS})
