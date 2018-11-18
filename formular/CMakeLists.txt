@@ -250,3 +250,12 @@ add_executable(gps_ctrl src/gps_ctrl.cc)
 target_link_libraries(gps_ctrl ${catkin_LIBRARIES})
 target_link_libraries(gps_ctrl ${OpenCV_LIBS})
 add_dependencies(gps_ctrl ${catkin_EXPORTED_TARGETS})
+
+add_executable(bucket_detect src/bucket_detect.cc)
+target_link_libraries(bucket_detect ${catkin_LIBRARIES})
+target_link_libraries(bucket_detect ${OpenCV_LIBS})
+add_dependencies(bucket_detect ${catkin_EXPORTED_TARGETS})
+
+add_executable(steer_ronghe src/steer_ronghe.cc)
+target_link_libraries(steer_ronghe ${catkin_LIBRARIES})
+add_dependencies(steer_ronghe ${catkin_EXPORTED_TARGETS})

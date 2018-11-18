@@ -209,12 +209,12 @@ PointCloud center_cluster(PointCloud cloud, double Tolerance, int MinSize, int M
     point_center.x += cloud.points[*pit].x;
     point_center.y += cloud.points[*pit].y;
 /****************************/
-    if(cloud.points[*pit].z > -0.2 && count_z<5) count_z++;//5个较高的点，才判为大椎捅
+    if(cloud.points[*pit].z > 0.7 && count_z<5) count_z++;//5个较高的点，才判为大椎捅
     
 /************ 找出大椎捅 *********************/   
     }
-    if(count_z == 5) point_center.z = 1.0;
-    else point_center.z = -1.0;
+    if(count_z == 5) point_center.z = 0.5;
+    else point_center.z = 0.0;
     ////////////////////////////////////////////////////////大椎捅的高度定z为1,小定为-1;
     point_center.x /=  (double)count;
     point_center.y /=  (double)count;
