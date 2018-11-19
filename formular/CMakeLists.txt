@@ -259,3 +259,7 @@ add_dependencies(bucket_detect ${catkin_EXPORTED_TARGETS})
 add_executable(steer_ronghe src/steer_ronghe.cc)
 target_link_libraries(steer_ronghe ${catkin_LIBRARIES})
 add_dependencies(steer_ronghe ${catkin_EXPORTED_TARGETS})
+
+add_executable(ronghe src/ronghe.cc)
+target_link_libraries(ronghe ${catkin_LIBRARIES})
+add_dependencies(ronghe ${catkin_EXPORTED_TARGETS})

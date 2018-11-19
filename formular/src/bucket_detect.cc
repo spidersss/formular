@@ -277,13 +277,13 @@ int main(int argc, char** argv)
 	
 		capture >> img;
 		if(!img.empty()){
-			imshow("video",img);
+			//imshow("video",img);
 			
 			//Mat img = imread("/home/kevin/Desktop/SEU_dRACING/test_pics/test8.jpg", IMREAD_COLOR);
 			resize(img, img, Size(img.cols , img.rows ), 0, 0, INTER_LINEAR);
 			cout<<"cols:"<<img.cols<<endl;
 			cout<<"rows:"<<img.rows<<endl;
-			imshow("src",img);
+			//imshow("src",img);
 			
 			
 			double start_time = get_wall_time();
