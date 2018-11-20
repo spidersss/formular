@@ -17,7 +17,7 @@
 	
 
 <!--lower_control parameters -->
-	<param name="port_name" value="/dev/ttyUSB0"/>
+	<param name="port_name" value="/dev/ttyS0"/>
 
 
 	

@@ -21,7 +21,8 @@ public:
 		set_Parity(fd, 8, 1, 'N');
 		set_speed(fd, 115200);
 		sendBuf[0] = 0x12 ; sendBuf[1] = 0x34; sendBuf[2] =0x56 ;
-		sendBuf[3] = 127;//speed =0
+		//sendBuf[3] = 127;//speed =0
+		sendBuf[3] = 0;
 		sendBuf[4] = 127; //the forth byte is speed(127-255)
 						//the fifth byte is angle(0-255) left is 0-127 and right is 128-255
 	}
@@ -43,7 +44,7 @@ private:
 	{
 		ROS_INFO("receive msg....");
 		double Kp = 0.6;
-		sendBuf[4] = msg.data * 0.1 * Kp + 127;
+		sendBuf[4] = msg.data + 127;
 		if(sendBuf[4] < 1) sendBuf[4] = 1;
 		if(sendBuf[4] > 254) sendBuf[4] = 254;
 	}
