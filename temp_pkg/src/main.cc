@@ -44,6 +44,7 @@ private:
 	{
 		ROS_INFO("receive msg....");
 		double Kp = 0.6;
+		if(msg.data > 999.0) sendBuf[3] = 127;//speed =0
 		sendBuf[4] = msg.data + 127;
 		if(sendBuf[4] < 1) sendBuf[4] = 1;
 		if(sendBuf[4] > 254) sendBuf[4] = 254;

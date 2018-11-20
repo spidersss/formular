@@ -358,7 +358,7 @@ int main(int argc, char** argv)
 
 			vector<Point> WorldPoint_red = detect_bucket(red);
 			vector<Point> WorldPoint_blue = detect_bucket(blue);
-			//vector<Point> WorldPoint_yellow = detect_bucket(yellow);
+			vector<Point> WorldPoint_yellow = detect_bucket(yellow);
 /********************************/
 			pcl::PointXYZ point_color;
 			cloud_color.points.clear();
@@ -372,6 +372,12 @@ int main(int argc, char** argv)
 				point_color.x = WorldPoint_blue[i].x / 100.0 * -1.0;
 				point_color.y = WorldPoint_blue[i].y / 100.0 * -1.0;
 				point_color.z = -1.0;
+				cloud_color.points.push_back(point_color);
+			}
+			for(int i = 0; i < WorldPoint_yellow.size(); i++){
+				point_color.x = WorldPoint_yellow[i].x / 100.0 * -1.0;
+				point_color.y = WorldPoint_yellow[i].y / 100.0 * -1.0;
+				point_color.z = 10.0;
 				cloud_color.points.push_back(point_color);
 			}
 			cloud_color.header.frame_id = "pandar";

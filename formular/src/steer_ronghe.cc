@@ -39,6 +39,7 @@ double ronghe_steerCreator(PointCloud cloud)
 		if(disToNext > 1.0){
 		double theta = (atan2(-1.0, 0) - atan2(center_y, center_x))/M_PI*180.0;	
 		std::cout<<"center_x: "<<center_x<<" center_y: "<<center_y<<"theta: "<<theta<<"\tdisToNext:"<<disToNext<<std::endl;
+		if(z >= 10.0) theta = 10000.0;
 		return theta;
 		}		
 	}
