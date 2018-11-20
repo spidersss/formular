@@ -95,7 +95,7 @@ vector<Point> CoordinateCalculate_2(vector<Point> &pole,vector<Point> & )
 		X = ((92.0/291) + (92.0/291)*(43.0/11656)*delta_y) * (pole[i].x - 320);
 		//Y = 248 - (pole[i].y - 90)*(98.0/90);
 		//X = (pole[i].x - 160)*(17.0/50)*((180.0+(90-pole[i].y))/180.0);
-		cout<<"X:"<<X<<"  "<<"Y:"<<Y<<endl;
+		cout<<"X:"<<X / 100.0 * -1.0<<"  "<<"Y:"<<Y / 100.0 * -1.0<<endl;
 		worldpoint.push_back(Point(X,Y));
 
 	}
@@ -361,15 +361,16 @@ int main(int argc, char** argv)
 			//vector<Point> WorldPoint_yellow = detect_bucket(yellow);
 /********************************/
 			pcl::PointXYZ point_color;
+			cloud_color.points.clear();
 			for(int i = 0; i < WorldPoint_red.size(); i++){
-				point_color.x = WorldPoint_red[i].x;
-				point_color.y = WorldPoint_red[i].y;
+				point_color.x = WorldPoint_red[i].x / 100.0 * -1.0;
+				point_color.y = WorldPoint_red[i].y / 100.0 * -1.0;
 				point_color.z = 1.0;
 				cloud_color.points.push_back(point_color);
 			}
 			for(int i = 0; i < WorldPoint_blue.size(); i++){
-				point_color.x = WorldPoint_blue[i].x;
-				point_color.y = WorldPoint_blue[i].y;
+				point_color.x = WorldPoint_blue[i].x / 100.0 * -1.0;
+				point_color.y = WorldPoint_blue[i].y / 100.0 * -1.0;
 				point_color.z = -1.0;
 				cloud_color.points.push_back(point_color);
 			}
