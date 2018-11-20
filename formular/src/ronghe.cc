@@ -6,7 +6,7 @@ public:
 	{	
 		sub_color = n.subscribe("color_points", 10, &rongheHandler::color_cb, this);
 		sub_lidar = n.subscribe("cluster_points", 10, &rongheHandler::lidar_cb, this);
-		ronghe_pub = n.advertise<sensor_msgs::PointCloud2>("ronghe",1, true);
+		ronghe_pub = n.advertise<sensor_msgs::PointCloud2>("ronghe_points",1, true);
 	}
 	void color_cb(const sensor_msgs::PointCloud2 &cloud_msg)
 	{

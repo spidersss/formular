@@ -254,7 +254,7 @@ vector<Point> detect_bucket_blue(Mat red)
 		WorldPoint_red = CoordinateCalculate_2(POLE_red,WorldPoint_red);
 
 		
-		imshow("counters_red",imgContours_red);	
+		//imshow("counters_red",imgContours_red);	
 
 		return WorldPoint_red;
 }

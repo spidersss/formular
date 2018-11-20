@@ -4,12 +4,12 @@ class cloudHandler
 public:
 	cloudHandler()
 	{
-		sub = n.subscribe("velodyne_points", 10,  &cloudHandler::cloud_cb, this);
+		sub = n.subscribe("pandar_points", 10,  &cloudHandler::cloud_cb, this);
 		pubxyz = n.advertise<sensor_msgs::PointCloud2> ("parted_points", 10);
 		n.param<double>("slope",slope,0.1);
 		n.param<double>("widthOfRalatedRegion",widthOfRalatedRegion,10.0);
 		n.param<double>("distanceOfDetection",distanceOfDetection,20.0);
-		n.param<double>("radiusOfUnrelatedRegion",radiusOfUnrelatedRegion,0.3);
+		n.param<double>("radiusOfUnrelatedRegion",radiusOfUnrelatedRegion,1.0);
 		n.param<double>("thresholdOfheight",thresholdOfheight,-0.0);
 		//ROS_INFO("slope=%f",slope);
 	}
